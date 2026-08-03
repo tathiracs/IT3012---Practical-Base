@@ -10,7 +10,8 @@ class VisualGridHuntGame:
         self.width = width
         self.height = height
         self.agent_pos = [0, 0]  # Starting position (x, y)
-
+        self.direction = "Up"
+        
         if custom_walls is not None:
             self.walls = set(custom_walls)
         else:
@@ -54,15 +55,32 @@ class VisualGridHuntGame:
         self.collision = False
 
     def get_percept(self) -> dict:
+        
+        x, y = self.agent_pos
+        front_x, front_y = x, y
+
+        if self.direction == "Up":
+            front_y += 1
+        elif self.direction == "Down":
+            front_y -= 1
+        elif self.direction == "Left":
+            front_x -= 1
+        elif self.direction == "Right":
+            front_x += 1
+
+        wall_ahead = (
+            front_x < 0 or
+            front_x >= self.width or
+            front_y < 0 or
+            front_y >= self.height or
+            (front_x, front_y) in self.walls
+        )
+
         return {
-            'agent_pos': list(self.agent_pos),
-            'opponent_positions': [list(op) for op in self.opponents],
-            'smells_food': tuple(self.agent_pos) in self.food_positions,
-            'smells_toxin': tuple(self.agent_pos) in self.toxic_traps,
-            'hit_wall': tuple(self.agent_pos) in self.walls,
-            'collision': self.collision,
-            'score': self.score,
-            'remaining_food': len(self.food_positions)
+        "wall_ahead": wall_ahead,
+        "food_here": (x, y) in self.food_positions,
+        "toxin_here": (x, y) in self.toxic_traps,
+        "collision": self.collision
         }
 
     def execute_action(self, action: str):
