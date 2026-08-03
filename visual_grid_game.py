@@ -97,6 +97,16 @@ class VisualGridHuntGame:
             elif self.direction == "Right":
                 self.direction = "Up"
 
+        elif action == "TurnRight":
+                if self.direction == "Up":
+                    self.direction = "Right"
+                elif self.direction == "Right":
+                    self.direction = "Down"
+                elif self.direction == "Down":
+                    self.direction = "Left"
+                elif self.direction == "Left":
+                    self.direction = "Up"
+
         # Eat food if present
         elif action == "Eat":
             if tuple(self.agent_pos) in self.food_positions:
@@ -171,6 +181,86 @@ class SimpleReflexAgent:
         else:
             return "Forward"
 
+
+class ModelBasedAgent:
+
+    def __init__(self):
+        self.visited_cells = set()
+        self.position = [0, 0]
+        self.direction = "Up"
+        self.last_action = None
+
+    def update_position(self):
+        if self.last_action == "Forward":
+
+            if self.direction == "Up":
+                self.position[1] += 1
+
+            elif self.direction == "Down":
+                self.position[1] -= 1
+
+            elif self.direction == "Left":
+                self.position[0] -= 1
+
+            elif self.direction == "Right":
+                self.position[0] += 1
+
+
+        elif self.last_action == "TurnLeft":
+
+            if self.direction == "Up":
+                self.direction = "Left"
+            elif self.direction == "Left":
+                self.direction = "Down"
+            elif self.direction == "Down":
+                self.direction = "Right"
+            elif self.direction == "Right":
+                self.direction = "Up"
+
+
+        elif self.last_action == "TurnRight":
+
+            if self.direction == "Up":
+                self.direction = "Right"
+            elif self.direction == "Right":
+                self.direction = "Down"
+            elif self.direction == "Down":
+                self.direction = "Left"
+            elif self.direction == "Left":
+                self.direction = "Up"
+
+
+    def sense_and_act(self, percept):
+
+        # Update internal model
+        self.update_position()
+
+        current_cell = tuple(self.position)
+        self.visited_cells.add(current_cell)
+
+
+        # Condition-Action rules
+
+        if percept["food_here"]:
+            action = "Eat"
+
+        elif percept["wall_ahead"]:
+
+            # Avoid repeating the same area
+            if self.last_action == "TurnLeft":
+                action = "TurnRight"
+            else:
+                action = "TurnLeft"
+
+        else:
+            action = "Forward"
+
+
+        self.last_action = action
+
+        return action
+
+
 class GridGameGUI:
     """Tkinter wrapper that dynamically scales cell sizes to keep larger grids on screen."""
 
@@ -183,7 +273,7 @@ class GridGameGUI:
         self.env = VisualGridHuntGame(width=width, height=height, num_food=num_food, num_opponents=num_opponents,
                                       custom_walls=walls)
 
-        self.agent = SimpleReflexAgent()
+        self.agent = ModelBasedAgent()
         
         # Dynamically calculate cell size so the total canvas fits nicely within a 600x600 window ceiling
         max_canvas_dim = 600
