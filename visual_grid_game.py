@@ -190,7 +190,8 @@ class ModelBasedAgent:
         self.direction = "Up"
         self.last_action = None
 
-    def update_position(self):
+    def update_state(self):
+
         if self.last_action == "Forward":
 
             if self.direction == "Up":
@@ -205,48 +206,49 @@ class ModelBasedAgent:
             elif self.direction == "Right":
                 self.position[0] += 1
 
-
         elif self.last_action == "TurnLeft":
 
             if self.direction == "Up":
                 self.direction = "Left"
+
             elif self.direction == "Left":
                 self.direction = "Down"
+
             elif self.direction == "Down":
                 self.direction = "Right"
+
             elif self.direction == "Right":
                 self.direction = "Up"
-
 
         elif self.last_action == "TurnRight":
 
             if self.direction == "Up":
                 self.direction = "Right"
+
             elif self.direction == "Right":
                 self.direction = "Down"
+
             elif self.direction == "Down":
                 self.direction = "Left"
+
             elif self.direction == "Left":
                 self.direction = "Up"
 
-
     def sense_and_act(self, percept):
 
-        # Update internal model
-        self.update_position()
+        self.update_state()
 
         current_cell = tuple(self.position)
         self.visited_cells.add(current_cell)
 
-
-        # Condition-Action rules
-
         if percept["food_here"]:
             action = "Eat"
 
+        elif percept["toxin_here"]:
+            action = "TurnRight"
+
         elif percept["wall_ahead"]:
 
-            # Avoid repeating the same area
             if self.last_action == "TurnLeft":
                 action = "TurnRight"
             else:
@@ -254,7 +256,6 @@ class ModelBasedAgent:
 
         else:
             action = "Forward"
-
 
         self.last_action = action
 
@@ -275,7 +276,6 @@ class GridGameGUI:
 
         self.agent = ModelBasedAgent()
         
-        # Dynamically calculate cell size so the total canvas fits nicely within a 600x600 window ceiling
         max_canvas_dim = 600
         self.cell_size = max(20, min(max_canvas_dim // self.env.width, max_canvas_dim // self.env.height))
 
@@ -307,7 +307,6 @@ class GridGameGUI:
                 color = "#f1f5f9" if (x, y) not in self.env.walls else "#64748b"
                 self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="#cbd5e1")
 
-                # Only draw text if cell is large enough
                 if self.cell_size >= 40 and (x, y) in self.env.walls:
                     self.canvas.create_text(x1 + self.cell_size / 2, y1 + self.cell_size / 2, text="W", fill="white",
                                             font=("Arial", 8, "bold"))
@@ -319,7 +318,6 @@ class GridGameGUI:
             self.canvas.create_oval(x1, y1, x1 + self.cell_size * 0.5, y1 + self.cell_size * 0.5, fill="#f59e0b",
                                     outline="#d97706")
 
-        # Draw toxic traps
         for tx, ty in self.env.toxic_traps:
             offset = self.cell_size * 0.25
             x1 = tx * self.cell_size + offset
@@ -370,6 +368,6 @@ class GridGameGUI:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    # Try a larger grid size like 12x12 with 15 food and 3 opponents!
+
     app = GridGameGUI(root, width=12, height=12, num_food=15, num_opponents=0)
     root.mainloop()
