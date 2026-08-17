@@ -141,6 +141,9 @@ class SearchAgent:
 
     def sense_and_act(self, percept):
 
+        if percept["food_here"]:
+            return "Eat"
+
         if not self.plan:
 
             grid_size = percept["grid_size"]
