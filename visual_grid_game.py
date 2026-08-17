@@ -1,6 +1,7 @@
 # visual_grid_game.py
 import random
 import tkinter as tk
+from agent import SearchAgent
 
 
 class VisualGridHuntGame:
@@ -77,14 +78,15 @@ class VisualGridHuntGame:
         )
 
         return {
-        "wall_ahead": wall_ahead,
-        "food_here": (x, y) in self.food_positions,
-        "toxin_here": (x, y) in self.toxic_traps,
-        "collision": self.collision
+            "agent_pos": list(self.agent_pos),
+            "wall_ahead": wall_ahead,
+            "food_here": (x, y) in self.food_positions,
+            "toxin_here": (x, y) in self.toxic_traps,
+            "collision": self.collision,
 
-        "grid_size": (self.width, self.height),
-        "walls": list(self.walls),
-        "all_food": list(self.food_positions)
+            "grid_size": (self.width, self.height),
+            "walls": list(self.walls),
+            "all_food": list(self.food_positions)
         }
 
     def execute_action(self, action: str):
@@ -116,6 +118,43 @@ class VisualGridHuntGame:
             if tuple(self.agent_pos) in self.food_positions:
                 self.food_positions.remove(tuple(self.agent_pos))
                 self.score += 20
+
+        elif action in ["Up", "Down", "Left", "Right"]:
+
+            new_pos = list(self.agent_pos)
+
+            if action == "Up":
+                new_pos[1] += 1
+
+            elif action == "Down":
+                new_pos[1] -= 1
+
+            elif action == "Left":
+                new_pos[0] -= 1
+
+            elif action == "Right":
+                new_pos[0] += 1
+
+            if (
+                new_pos[0] < 0 or
+                new_pos[0] >= self.width or
+                new_pos[1] < 0 or
+                new_pos[1] >= self.height or
+                tuple(new_pos) in self.walls
+            ):
+                self.score -= 5
+
+            else:
+                self.agent_pos = new_pos
+
+                if tuple(self.agent_pos) in self.toxic_traps:
+                    self.score -= 15
+
+                for op in self.opponents:
+                    if op == self.agent_pos:
+                        self.score -= 50
+                        self.collision = True
+
 
         # Move one step forward based on current direction
         elif action == "Forward":
@@ -278,7 +317,7 @@ class GridGameGUI:
         self.env = VisualGridHuntGame(width=width, height=height, num_food=num_food, num_opponents=num_opponents,
                                       custom_walls=walls)
 
-        self.agent = ModelBasedAgent()
+        self.agent = SearchAgent()
         
         max_canvas_dim = 600
         self.cell_size = max(20, min(max_canvas_dim // self.env.width, max_canvas_dim // self.env.height))
